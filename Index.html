@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendAI | Smart Attendance</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Segoe UI", sans-serif;
+      background: #0b1020;
+      color: #f3f5ff;
+      padding: 32px 16px;
+    }
+    .app { max-width: 850px; margin: auto; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+    .logo {
+      width: 52px; height: 52px; display: grid; place-items: center;
+      border-radius: 16px; background: #203e37; font-size: 27px;
+    }
+    h1 { margin: 0; font-size: 29px; }
+    .subtitle { color: #9ba8c7; margin: 6px 0 0; }
+    .tag {
+      margin-left: auto; border: 1px solid #315d4c; color: #83e4ae;
+      padding: 7px 11px; border-radius: 20px; font-size: 12px;
+    }
+    .panel {
+      background: #141b2e; border: 1px solid #29334c;
+      border-radius: 20px; padding: 24px; margin-bottom: 18px;
+    }
+    h2 { font-size: 18px; margin: 0 0 20px; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { display: block; font-size: 13px; color: #b7c1d9; margin-bottom: 8px; }
+    input {
+      width: 100%; padding: 13px; border-radius: 10px;
+      background: #0b1020; border: 1px solid #34405d;
+      color: white; font-size: 16px; outline: none;
+    }
+    input:focus { border-color: #55d69a; }
+    .target { margin-top: 18px; max-width: 220px; }
+    button {
+      border: 0; border-radius: 11px; padding: 13px 18px;
+      background: #65e6a3; color: #0b2018; font-weight: 750;
+      font-size: 15px; cursor: pointer; margin-top: 20px;
+    }
+    button:hover { background: #8cf2bc; transform: translateY(-1px); }
+    .error { color: #ff9b9b; font-size: 13px; margin-top: 12px; }
+    .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stat { background: #0e1526; border: 1px solid #29334c; padding: 17px; border-radius: 14px; }
+    .stat p { color: #9ba8c7; font-size: 12px; margin: 0 0 10px; }
+    .stat strong { font-size: 25px; overflow-wrap: anywhere; }
+    .green { color: #75e6a9; }
+    .yellow { color: #ffd477; }
+    .progress { background: #29334c; height: 9px; border-radius: 20px; margin-top: 20px; overflow: hidden; }
+    #bar { height: 100%; width: 0; background: #65e6a3; transition: width .4s; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #aebbd4; margin-top: 9px; }
+    .advice { display: flex; gap: 13px; align-items: flex-start; }
+    .spark { font-size: 24px; }
+    .advice p { color: #c1cbe0; line-height: 1.65; margin: 7px 0 0; }
+    .hidden { display: none; }
+    footer { text-align: center; color: #7f8aa6; font-size: 12px; padding: 14px; line-height: 1.8; }
+    @media (max-width: 560px) {
+      body { padding: 22px 12px; }
+      .panel { padding: 18px; }
+      .fields { grid-template-columns: 1fr; }
+      .results { grid-template-columns: 1fr; }
+      .stat strong { font-size: 23px; }
+      .tag { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="logo">🎓</div>
+      <div>
+        <h1>AttendAI</h1>
+        <p class="subtitle">Your smart attendance companion</p>
+      </div>
+      <span class="tag">SMART TRACKER</span>
+    </header>
+
+    <section class="panel">
+      <h2>📊 Calculate your attendance</h2>
+      <div class="fields">
+        <div>
+          <label for="attended">Classes attended</label>
+          <input id="attended" type="number" min="0" step="1" value="33" placeholder="e.g. 33" />
+        </div>
+        <div>
+          <label for="total">Total classes held</label>
+          <input id="total" type="number" min="0" step="1" value="40" placeholder="e.g. 40" />
+        </div>
+      </div>
+      <div class="target">
+        <label for="target">Required attendance (%)</label>
+        <input id="target" type="number" min="1" max="100" step="1" value="75" />
+      </div>
+      <button id="calculate">Calculate attendance →</button>
+      <p id="error" class="error" role="alert"></p>
+    </section>
+
+    <section id="output" class="panel hidden" aria-live="polite">
+      <h2>Your attendance report</h2>
+      <div class="results">
+        <div class="stat">
+          <p>Current attendance</p>
+          <strong id="percentage">—</strong>
+        </div>
+        <div class="stat">
+          <p>Classes to attend</p>
+          <strong id="needed">—</strong>
+        </div>
+        <div class="stat">
+          <p>Classes you can miss</p>
+          <strong id="bunks">—</strong>
+        </div>
+      </div>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="progress-label">
+        <span>Attendance progress</span>
+        <span id="progressText">—</span>
+      </div>
+    </section>
+
+    <section id="suggestion" class="panel hidden" aria-live="polite">
+      <div class="advice">
+        <span class="spark">✨</span>
+        <div>
+          <h2>Smart suggestion</h2>
+          <p id="adviceText"></p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      AttendAI • Built with HTML, CSS & JavaScript<br />
+      Smart rule-based suggestions — no external AI service connected.
+    </footer>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function calculateAttendance() {
+      const attended = Number($("attended").value);
+      const total = Number($("total").value);
+      const target = Number($("target").value);
+      const error = $("error");
+
+      error.textContent = "";
+      $("output").classList.add("hidden");
+      $("suggestion").classList.add("hidden");
+
+      if (
+        $("attended").value.trim() === "" ||
+        $("total").value.trim() === "" ||
+        $("target").value.trim() === "" ||
+        !Number.isInteger(attended) ||
+        !Number.isInteger(total) ||
+        attended < 0 || total < 1 ||
+        attended > total ||
+        !Number.isFinite(target) || target <= 0 || target > 100
+      ) {
+        error.textContent =
+          "Enter valid values: classes must be whole numbers, attended cannot exceed total, and target must be above 0 and at most 100%.";
+        return;
+      }
+
+      const current = (attended / total) * 100;
+      const required = target / 100;
+      const needed = current >= target
+        ? 0
+        : Math.ceil((target * total - 100 * attended) / (100 - target));
+      const bunks = current < target
+        ? 0
+        : Math.floor((attended - required * total) / required);
+
+      $("percentage").textContent = current.toFixed(2) + "%";
+      $("percentage").className = current >= target ? "green" : "yellow";
+      $("needed").textContent = needed;
+      $("bunks").textContent = bunks;
+      $("bar").style.width = Math.min(current, 100) + "%";
+      $("progressText").textContent = current.toFixed(1) + "% / " + target + "% target";
+      $("output").classList.remove("hidden");
+
+      let advice;
+      if (current >= target + 10) {
+        advice = "Great! You have a healthy attendance buffer. Keep tracking your classes and avoid unnecessary absences.";
+      } else if (current >= target) {
+        advice = "You meet your attendance target, but your buffer is limited. Attend upcoming classes to stay on the safe side.";
+      } else {
+        advice = "Your attendance is below the required target. If you attend every next class, you need " + needed +
+          " consecutive classes to reach " + target + "%. Check your college rules with your faculty.";
+      }
+
+      $("adviceText").textContent = advice;
+      $("suggestion").classList.remove("hidden");
+    }
+
+    $("calculate").addEventListener("click", calculateAttendance);
+    document.querySelectorAll("input").forEach(input => {
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") calculateAttendance();
+      });
+    });
+
+    calculateAttendance();
+  </script>
+</body>
+</html>
